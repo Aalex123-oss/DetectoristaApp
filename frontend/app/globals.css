@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import 'leaflet/dist/leaflet.css';
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+@layer components {
+  .panel-section {
+    @apply flex flex-col gap-2 rounded-lg border border-edge bg-panelSoft p-3;
+  }
+
+  .panel-title {
+    @apply text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400;
+  }
+
+  .field-label {
+    @apply text-[11px] text-slate-400;
+  }
+
+  .hint {
+    @apply text-[11px] leading-snug text-slate-500;
+  }
+
+  .input {
+    @apply w-full rounded-md border border-edge bg-panel px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-accent;
+  }
+
+  .btn {
+    @apply rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-slate-900 transition hover:brightness-110 disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply rounded-md border border-edge bg-panel px-2 py-1 text-xs text-slate-300 transition hover:bg-panelSoft;
+  }
+}
+
+/* --- Leaflet chrome ---------------------------------------------------- */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #05080c;
+  font-family: inherit;
+}
+
+.leaflet-control-attribution {
+  background: rgba(15, 23, 32, 0.82) !important;
+  color: #94a3b8 !important;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #38bdf8 !important;
+}
+
+.leaflet-bar a,
+.leaflet-control-scale-line {
+  background: #16212c !important;
+  color: #e2e8f0 !important;
+  border-color: #243444 !important;
+}
+
+/* --- comparator splitter ---------------------------------------------- */
+.comparator-splitter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 900;
+  width: 22px;
+  margin-left: -11px;
+  cursor: ew-resize;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.comparator-splitter::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+}
+
+.comparator-splitter__grip {
+  position: relative;
+  display: flex;
+  height: 34px;
+  width: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid #38bdf8;
+  background: #0f1720;
+  color: #38bdf8;
+  font-size: 14px;
+  user-select: none;
+}
+
+/* --- analysis pins ---------------------------------------------------- */
+.analysis-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.analysis-pin__dot {
+  display: block;
+  height: 12px;
+  width: 12px;
+  border-radius: 9999px;
+  background: #f59e0b;
+  border: 2px solid #0f1720;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45);
+}
+
+.analysis-pin--active .analysis-pin__dot {
+  height: 16px;
+  width: 16px;
+  background: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.35);
+}
+
+.leaflet-tooltip {
+  background: #0f1720;
+  border: 1px solid #243444;
+  color: #e2e8f0;
+  font-size: 11px;
+}
+
+.leaflet-tooltip-top::before {
+  border-top-color: #243444;
+}
+
+input[type='range'] {
+  accent-color: #38bdf8;
+}

@@ -1,0 +1,16 @@
+{
+  "name": "detectorista-webgis",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web GIS workspace for LiDAR visualisation, historical cartography comparison and automated archaeological intelligence research.",
+  "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "dev": "bash scripts/dev.sh",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "backend/.venv/bin/uvicorn app.main:app --reload --port 8000",
+    "build": "npm --prefix frontend run build",
+    "lint": "npm --prefix frontend run lint",
+    "typecheck": "npm --prefix frontend run typecheck",
+    "test:backend": "cd backend && .venv/bin/pytest -q"
+  }
+}

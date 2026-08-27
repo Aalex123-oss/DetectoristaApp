@@ -1,3 +1,8 @@
+# Detectorista workspace Python dependencies.
+# The Web GIS backend (FastAPI) pins its own dependency set:
+-r backend/requirements.txt
+
+# Legacy Streamlit companion app (app_detectorista.py):
 streamlit
 folium
 pandas
