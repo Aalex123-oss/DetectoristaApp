@@ -13,9 +13,21 @@ except ImportError:
 
 from .config import Config, apply_arguments, parse_video_source
 from .gui import ROVGui
-from .joystick import Joystick, flags_from_buttons
+from .joystick import Joystick
+from .protocol import FLAG_ARMED, FLAG_EMERGENCY, FLAG_LIGHTS
 from .serial_link import SerialLink
 from .video import VideoCaptureThread
+
+
+def frame_for_tick(axes: tuple, armed: bool, emergency: bool,
+                   lights: bool) -> tuple:
+    """Decide la trama segura que se transmite en un ciclo."""
+    if emergency:
+        return 128, 128, 128, FLAG_EMERGENCY
+    if not armed:
+        return 128, 128, 128, 0
+    flags = FLAG_ARMED | (FLAG_LIGHTS if lights else 0)
+    return axes[0], axes[1], axes[2], flags
 
 
 class ROVApplication:
@@ -38,6 +50,9 @@ class ROVApplication:
         self.rate_start = time.monotonic()
         self.packet_rate = 0.0
         self.last_axes = (128, 128, 128)
+        self.last_telemetry_at = 0.0
+        self.previous_link_connected = False
+        self.previous_joystick_connected = False
         self.closing = False
         self.gui = ROVGui(self.root, self.arm, self.disarm, self.stop_emergency,
                           self.toggle_lights, self.reconnect)
@@ -82,24 +97,37 @@ class ROVApplication:
                 self.joystick.name,
                 "conectado" if self.joystick.connected else "desconectado",
                 self.last_axes, 0, self.packet_rate, self.link.last_telemetry, reason,
+                self.link.last_telemetry is not None
+                and time.monotonic() - self.last_telemetry_at > 2.0,
             )
 
     def control_tick(self) -> None:
         """Ejecuta un ciclo de control de 20 Hz y siempre reprograma el ciclo."""
         if self.closing:
             return
+        tick_started = time.monotonic()
         try:
             axes = self.joystick.read_axes()
-            self.last_axes = axes
             buttons = self.joystick.read_buttons()
             if buttons.get("emergency"):
                 self.stop_emergency()
-            flags = flags_from_buttons(buttons, self.armed, self.emergency, self.lights)
-            if self.emergency:
-                flags = 0x04
             if not self.joystick.connected:
                 raise ConnectionError("El joystick se desconectó")
-            self.link.send(*axes, flags)
+            if not self.previous_joystick_connected:
+                self.last_error = ""
+                self.joystick.error = ""
+            self.previous_joystick_connected = True
+            sent_frame = frame_for_tick(
+                axes, self.armed, self.emergency,
+                self.lights or buttons.get("lights", False),
+            )
+            self.last_axes = sent_frame[:3]
+            self.link.send(*sent_frame)
+            link_connected = self.link.connected
+            if link_connected and not self.previous_link_connected:
+                self.link.last_error = ""
+                self.last_error = ""
+            self.previous_link_connected = link_connected
             self.packet_count += 1
             elapsed = time.monotonic() - self.rate_start
             if elapsed >= 1.0:
@@ -107,20 +135,34 @@ class ROVApplication:
                 self.packet_count = 0
                 self.rate_start = time.monotonic()
             telemetry = self.link.read_telemetry()
+            if telemetry is not None:
+                self.last_telemetry_at = time.monotonic()
+            telemetry_stale = (
+                self.link.last_telemetry is not None
+                and time.monotonic() - self.last_telemetry_at > 2.0
+            )
             self.gui.update_status(
-                "conectado" if self.link.connected else "desconectado",
+                "conectado" if link_connected else "desconectado",
                 self.joystick.name, "conectado" if self.joystick.connected else "desconectado",
-                axes, flags, self.packet_rate, telemetry, self.last_error,
+                self.last_axes, sent_frame[3], self.packet_rate,
+                self.link.last_telemetry, self.last_error, telemetry_stale,
             )
             self.gui.show_frame(self.video.latest())
-            if not self.emergency:
-                self.gui.set_banner("Control activo" if self.armed else "Sistema desarmado", safe=self.armed)
-            self.last_error = self.link.last_error
+            if self.emergency:
+                self.gui.set_banner(
+                    "PARADA DE EMERGENCIA — pulse ARMAR para rearmar", safe=False
+                )
+            elif self.armed:
+                self.gui.set_banner("Control activo", safe=True)
+            else:
+                self.gui.set_banner("Sistema desarmado", safe=False)
         except Exception as exc:
             self.safety_stop(str(exc))
         finally:
             if not self.closing:
-                self.root.after(max(1, int(1000 / self.config.send_rate)), self.control_tick)
+                period_ms = 1000.0 / self.config.send_rate
+                work_ms = (time.monotonic() - tick_started) * 1000.0
+                self.root.after(max(1, int(period_ms - work_ms)), self.control_tick)
 
     def close(self) -> None:
         """Detiene el ROV y libera todos los recursos antes de cerrar."""

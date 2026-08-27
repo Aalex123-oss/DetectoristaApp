@@ -52,11 +52,14 @@ class ROVGui:
 
     def update_status(self, serial_state: str, joystick_name: str, joystick_state: str,
                       axes: tuple, flags: int, packet_rate: float,
-                      telemetry: Optional[dict], error: str = "") -> None:
+                      telemetry: Optional[dict], error: str = "",
+                      telemetry_stale: bool = False) -> None:
         """Muestra todos los estados requeridos por el operador."""
         telemetry_text = "Sin telemetría" if not telemetry else "; ".join(
             f"{key}={value}" for key, value in telemetry.items() if key != "tipo"
         )
+        if telemetry and telemetry_stale:
+            telemetry_text += " (sin actualizar)"
         self.status.set(
             f"Serie: {serial_state} | Joystick: {joystick_name} ({joystick_state})\n"
             f"X={axes[0]} Y={axes[1]} Z={axes[2]} | flags=0x{flags:02X} | "

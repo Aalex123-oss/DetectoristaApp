@@ -22,6 +22,7 @@ from surface_app.protocol import (
     unpack_frame,
 )
 from surface_app.serial_link import SerialLink
+from surface_app.main import frame_for_tick
 
 
 class FakeJoystickDevice:
@@ -202,6 +203,19 @@ def assert_serial_path() -> None:
           "fallo de escritura desconectó el enlace")
 
 
+def assert_safe_frame_decision() -> None:
+    """Verifica que ningún estado inseguro transmita una desviación."""
+    axes = (200, 34, 80)
+    emergency_frame = frame_for_tick(axes, armed=True, emergency=True, lights=True)
+    disarmed_frame = frame_for_tick(axes, armed=False, emergency=False, lights=True)
+    armed_frame = frame_for_tick(axes, armed=True, emergency=False, lights=True)
+    assert emergency_frame == (128, 128, 128, FLAG_EMERGENCY)
+    assert disarmed_frame == (128, 128, 128, 0)
+    assert armed_frame == (200, 34, 80, FLAG_ARMED | FLAG_LIGHTS)
+    print(f"regresión de seguridad: emergencia={emergency_frame}, "
+          f"desarmado={disarmed_frame}, armado={armed_frame}")
+
+
 def main() -> int:
     """Inicializa pygame en modo dummy y ejecuta todas las comprobaciones."""
     try:
@@ -215,7 +229,8 @@ def main() -> int:
     assert_protocol_basics()
     assert_joystick_path()
     assert_serial_path()
-    print("PASS: protocolo, deadband, joystick real simulado, desconexión, serie y failsafe")
+    assert_safe_frame_decision()
+    print("PASS: protocolo, deadband, joystick simulado, desconexión, serie y seguridad")
     return 0
 
 
