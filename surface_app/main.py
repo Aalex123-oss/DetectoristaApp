@@ -111,6 +111,8 @@ class ROVApplication:
             buttons = self.joystick.read_buttons()
             if buttons.get("emergency"):
                 self.stop_emergency()
+            elif buttons.get("armed"):
+                self.arm()
             if not self.joystick.connected:
                 raise ConnectionError("El joystick se desconectó")
             if not self.previous_joystick_connected:
