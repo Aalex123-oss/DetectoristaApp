@@ -7,8 +7,8 @@ from shapely.geometry import Point
 st.title("Detectorista GIS - Totana")
 
 # Entradas de coordenadas
-lat = st.number_input("Latitud", value=37.7701, format="%.6f")
-lon = st.number_input("Longitud", value=-1.5020, format="%.6f")
+lat = st.number_input("Latitud", value=37.7701, min_value=-90.0, max_value=90.0, format="%.6f")
+lon = st.number_input("Longitud", value=-1.5020, min_value=-180.0, max_value=180.0, format="%.6f")
 
 if st.button("Analizar"):
     # Crear punto
