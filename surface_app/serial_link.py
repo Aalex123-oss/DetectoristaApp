@@ -43,6 +43,7 @@ class SerialLink:
             return False
         try:
             self.connection = self.serial_factory(self.port, self.baudrate, timeout=0, write_timeout=0.2)
+            self.last_error = ""
             return True
         except Exception as exc:
             self.connection = None

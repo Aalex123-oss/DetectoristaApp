@@ -127,6 +127,8 @@ class ROVApplication:
             if link_connected and not self.previous_link_connected:
                 self.link.last_error = ""
                 self.last_error = ""
+            elif not link_connected:
+                self.last_error = self.link.last_error
             self.previous_link_connected = link_connected
             self.packet_count += 1
             elapsed = time.monotonic() - self.rate_start

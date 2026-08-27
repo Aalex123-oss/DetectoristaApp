@@ -189,6 +189,9 @@ def assert_serial_path() -> None:
     stop_packet = bytes.fromhex("aa 80 80 80 00 80")
     port = FakeSerialPort()
     link = SerialLink("/dev/falso", retry_seconds=0, serial_factory=lambda *_args, **kwargs: port)
+    link.last_error = "error anterior"
+    assert link.open(force=True)
+    assert link.last_error == ""
     assert link.send_stop()
     assert port.writes == [stop_packet]
     link.close()
