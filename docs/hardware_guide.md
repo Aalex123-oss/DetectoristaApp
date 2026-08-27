@@ -27,8 +27,9 @@ de personas capacitadas.
 ## Lista de materiales
 
 Los precios son orientativos en dólares estadounidenses y corresponden a
-componentes genéricos. El total de los elementos de esta tabla es **US$97.50**
-y no incluye el joystick USB.
+componentes genéricos. La columna de precio es el **total de cada línea** (no
+el precio unitario). El total de los elementos de esta tabla es **US$97.50** y
+no incluye el joystick USB.
 
 | Elemento | Cantidad | Precio (US$) | Sustitución más económica |
 |---|---:|---:|---|
@@ -55,10 +56,11 @@ nuevo suele costar US$5–10. Un joystick USB es adicional al total.
 
 La presión hidrostática se estima mediante:
 
-\[
-\Delta p=\rho g h=1000\ \mathrm{kg/m^3}\times9.81\ \mathrm{m/s^2}
-\times150\ \mathrm{m}\approx1.47\ \mathrm{MPa}
-\]
+```text
+Δp = ρ × g × h
+   = 1000 kg/m³ × 9.81 m/s² × 150 m
+   ≈ 1.47 MPa
+```
 
 Sumando la atmósfera, la presión absoluta a 150 m es aproximadamente **15.5
 bar**, o **1.5 MPa**. La diferencia de presión externa es la que carga la
@@ -193,7 +195,7 @@ transceptor. No se deben derivar ramales largos.
 | ESP32 | GPIO25, GPIO26, GPIO27 | L298N #1 ENA, IN1, IN2 |
 | ESP32 | GPIO32, GPIO33, GPIO14 | L298N #1 ENB, IN3, IN4 |
 | ESP32 | GPIO13, GPIO5, GPIO18 | L298N #2 ENA, IN1, IN2 |
-| ESP32 | GPIO19 | L298N #2 ENB, sin motor; mantener bajo |
+| ESP32 | GPIO19 | No se usa: ENB de L298N #2 no tiene motor y debe quedar bajo en hardware |
 | L298N #1 A/B | Salidas | Thrusters horizontales izquierdo/derecho |
 | L298N #2 A | Salida | Thruster vertical |
 | ESP32 | GPIO23 | Entrada del relé de luces |
@@ -208,6 +210,24 @@ RO sea segura para el UART elegido; usar un divisor o un transceptor de 3.3 V
 si el módulo no garantiza niveles compatibles con ESP32. En el montaje con
 Arduino Uno/Nano se usa la UART hardware disponible y se deben adaptar los
 terminales a la placa concreta.
+
+### Mapa alternativo para Arduino Uno/Nano
+
+| Señal | Pin AVR | Conexión |
+|---|---:|---|
+| DE y `/RE` unidos | D3 | Control de dirección MAX485 |
+| L298N #1 ENA | D9 PWM | Thruster horizontal izquierdo |
+| L298N #1 IN1/IN2 | D2/D4 | Dirección del thruster izquierdo |
+| L298N #1 ENB | D10 PWM | Thruster horizontal derecho |
+| L298N #1 IN3/IN4 | D7/D8 | Dirección del thruster derecho |
+| L298N #2 ENA | D11 PWM | Thruster vertical |
+| L298N #2 IN1/IN2 | D12/D13 | Dirección del thruster vertical |
+| Relé de luces | D5 | Activación del relé |
+| Divisor de tensión | A0 | Medición de VIN |
+
+En Uno/Nano la única UART hardware se comparte entre comandos y telemetría,
+lo cual es correcto para RS-485 semidúplex cuando DE/RE se conmuta antes y
+después de transmitir.
 
 ## Protocolo de control
 

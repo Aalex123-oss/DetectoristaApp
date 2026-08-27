@@ -38,6 +38,7 @@ class ROVApplication:
         self.rate_start = time.monotonic()
         self.packet_rate = 0.0
         self.last_axes = (128, 128, 128)
+        self.closing = False
         self.gui = ROVGui(self.root, self.arm, self.disarm, self.stop_emergency,
                           self.toggle_lights, self.reconnect)
         self.joystick.initialize()
@@ -74,10 +75,19 @@ class ROVApplication:
         self.armed = False
         self.last_error = reason
         self.link.send_stop()
-        self.gui.set_banner(f"PARADA DE SEGURIDAD: {reason}", safe=False)
+        if not self.closing:
+            self.gui.set_banner(f"PARADA DE SEGURIDAD: {reason}", safe=False)
+            self.gui.update_status(
+                "conectado" if self.link.connected else "desconectado",
+                self.joystick.name,
+                "conectado" if self.joystick.connected else "desconectado",
+                self.last_axes, 0, self.packet_rate, self.link.last_telemetry, reason,
+            )
 
     def control_tick(self) -> None:
         """Ejecuta un ciclo de control de 20 Hz y siempre reprograma el ciclo."""
+        if self.closing:
+            return
         try:
             axes = self.joystick.read_axes()
             self.last_axes = axes
@@ -109,10 +119,14 @@ class ROVApplication:
         except Exception as exc:
             self.safety_stop(str(exc))
         finally:
-            self.root.after(max(1, int(1000 / self.config.send_rate)), self.control_tick)
+            if not self.closing:
+                self.root.after(max(1, int(1000 / self.config.send_rate)), self.control_tick)
 
     def close(self) -> None:
         """Detiene el ROV y libera todos los recursos antes de cerrar."""
+        if self.closing:
+            return
+        self.closing = True
         self.link.send_stop()
         self.video.stop()
         self.joystick.close()

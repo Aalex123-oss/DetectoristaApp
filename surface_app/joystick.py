@@ -35,22 +35,48 @@ class Joystick:
         if pygame is None:
             return False
         try:
+            pygame.joystick.init()
+            pygame.event.pump()
             count = pygame.joystick.get_count()
-            if self.device is not None and self.device.get_init():
-                return True
-            if count:
-                self.device = pygame.joystick.Joystick(0)
-                self.device.init()
-                self.name = self.device.get_name()
-                self.error = ""
-                return True
-            self.device = None
-            self.name = "Sin joystick"
-            return False
+            if count == 0:
+                self.device = None
+                self.name = "Sin joystick"
+                self.error = "Joystick no conectado"
+                return False
+            if self.device is not None:
+                try:
+                    if self.device.get_init():
+                        return True
+                except (OSError, pygame.error):
+                    pass
+                self.device = None
+            self.device = pygame.joystick.Joystick(0)
+            self.device.init()
+            if not self.device.get_init():
+                self.device = None
+                self.name = "Sin joystick"
+                self.error = "Joystick no inicializado"
+                return False
+            self.name = self.device.get_name()
+            self.error = ""
+            return True
         except (OSError, pygame.error) as exc:
             self.device = None
             self.name = "Sin joystick"
             self.error = str(exc)
+            return False
+
+    @property
+    def connected(self) -> bool:
+        """Expone si existe un dispositivo inicializado."""
+        if self.device is None:
+            return False
+        try:
+            return bool(self.device.get_init())
+        except (OSError, pygame.error):
+            self.device = None
+            self.name = "Sin joystick"
+            self.error = "Joystick desconectado"
             return False
 
     @staticmethod
@@ -91,11 +117,6 @@ class Joystick:
             "emergency": bool(self.device.get_numbuttons() > 1 and self.device.get_button(1)),
             "lights": bool(self.device.get_numbuttons() > 2 and self.device.get_button(2)),
         }
-
-    @property
-    def connected(self) -> bool:
-        """Expone si existe un dispositivo inicializado."""
-        return self.device is not None and bool(self.device.get_init())
 
     def close(self) -> None:
         """Libera pygame y el dispositivo."""

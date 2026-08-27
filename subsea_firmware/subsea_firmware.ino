@@ -4,6 +4,7 @@
 */
 #include <Arduino.h>
 
+#if defined(ARDUINO_ARCH_ESP32)
 const uint8_t PIN_DE_RE = 4;
 const uint8_t PIN_LIGHT = 23;
 const uint8_t PIN_VIN = 34;
@@ -14,9 +15,24 @@ const uint8_t PIN_RIGHT_EN = 32;
 const uint8_t PIN_RIGHT_IN1 = 33;
 const uint8_t PIN_RIGHT_IN2 = 14;
 const uint8_t PIN_VERTICAL_EN = 13;
-const uint8_t PIN_VERTICAL_AUX_EN = 19;
 const uint8_t PIN_VERTICAL_IN1 = 5;
 const uint8_t PIN_VERTICAL_IN2 = 18;
+#elif defined(ARDUINO_ARCH_AVR)
+const uint8_t PIN_DE_RE = 3;
+const uint8_t PIN_LIGHT = 5;
+const uint8_t PIN_VIN = A0;
+const uint8_t PIN_LEFT_EN = 9;
+const uint8_t PIN_LEFT_IN1 = 2;
+const uint8_t PIN_LEFT_IN2 = 4;
+const uint8_t PIN_RIGHT_EN = 10;
+const uint8_t PIN_RIGHT_IN1 = 7;
+const uint8_t PIN_RIGHT_IN2 = 8;
+const uint8_t PIN_VERTICAL_EN = 11;
+const uint8_t PIN_VERTICAL_IN1 = 12;
+const uint8_t PIN_VERTICAL_IN2 = 13;
+// En AVR la UART hardware se comparte entre comandos y telemetría; es
+// apropiado para RS-485 semidúplex con conmutación DE/RE.
+#endif
 
 const unsigned long FAILSAFE_MS = 500;
 const unsigned long TELEMETRY_MS = 250;
@@ -72,10 +88,11 @@ void detenerMotores() {
   escribirPWM(PIN_LEFT_EN, PWM_CHANNEL_LEFT, 0);
   escribirPWM(PIN_RIGHT_EN, PWM_CHANNEL_RIGHT, 0);
   escribirPWM(PIN_VERTICAL_EN, PWM_CHANNEL_VERTICAL, 0);
+#if !defined(ARDUINO_ARCH_ESP32)
   digitalWrite(PIN_LEFT_EN, LOW);
   digitalWrite(PIN_RIGHT_EN, LOW);
   digitalWrite(PIN_VERTICAL_EN, LOW);
-  digitalWrite(PIN_VERTICAL_AUX_EN, LOW);
+#endif
   digitalWrite(PIN_RIGHT_IN1, LOW);
   digitalWrite(PIN_RIGHT_IN2, LOW);
   digitalWrite(PIN_LEFT_IN1, LOW);
@@ -90,7 +107,9 @@ void configurarMotor(uint8_t en, uint8_t in1, uint8_t in2, int16_t potencia,
     digitalWrite(in1, LOW);
     digitalWrite(in2, LOW);
     escribirPWM(en, canal, 0);
+#if !defined(ARDUINO_ARCH_ESP32)
     digitalWrite(en, LOW);
+#endif
     return;
   }
   bool adelante = potencia > 0;
@@ -202,7 +221,6 @@ void setup() {
   pinMode(PIN_LEFT_EN, OUTPUT);
   pinMode(PIN_RIGHT_EN, OUTPUT);
   pinMode(PIN_VERTICAL_EN, OUTPUT);
-  pinMode(PIN_VERTICAL_AUX_EN, OUTPUT);
   pinMode(PIN_LEFT_IN1, OUTPUT);
   pinMode(PIN_LEFT_IN2, OUTPUT);
   pinMode(PIN_RIGHT_IN1, OUTPUT);

@@ -46,7 +46,11 @@ def apply_arguments(config: Config, args: Any) -> Config:
     overrides = {name: getattr(args, name, None) for name in names}
     if getattr(args, "no_video", False):
         overrides["video_source"] = None
-    return config.update(overrides)
+    values = asdict(config)
+    for name, value in overrides.items():
+        if value is not None or (name == "video_source" and getattr(args, "no_video", False)):
+            values[name] = value
+    return Config(**values)
 
 
 def parse_video_source(value: Any) -> Any:
